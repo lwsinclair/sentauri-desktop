@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Voice Orb Icon</title>
+</head>
+<body>
+    <canvas id="canvas" width="512" height="512" style="border: 1px solid #ccc;"></canvas>
+    <br><br>
+    <button onclick="downloadIcon()">Download Icon</button>
+    <button onclick="generateTrayIcon()">Generate Tray Icon</button>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function drawVoiceOrb(size = 512) {
+            canvas.width = size;
+            canvas.height = size;
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const radius = size * 0.4;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+
+            // Create radial gradient for orb
+            const gradient = ctx.createRadialGradient(
+                centerX - radius * 0.3, centerY - radius * 0.3, 0,
+                centerX, centerY, radius
+            );
+            gradient.addColorStop(0, '#e8f0ff');
+            gradient.addColorStop(0.5, '#C5D1E0');
+            gradient.addColorStop(1, '#a0b8d0');
+
+            // Draw orb background
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Add outer glow
+            ctx.shadowColor = 'rgba(59, 130, 246, 0.3)';
+            ctx.shadowBlur = size * 0.02;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+
+            // Create eye gradient
+            const eyeGradient = ctx.createLinearGradient(0, centerY - radius * 0.3, 0, centerY + radius * 0.3);
+            eyeGradient.addColorStop(0, '#3B82F6');
+            eyeGradient.addColorStop(1, '#00CEC8');
+
+            // Draw eyes
+            const eyeWidth = size * 0.024;
+            const eyeHeight = size * 0.14;
+            const eyeOffset = size * 0.06;
+
+            ctx.fillStyle = eyeGradient;
+            
+            // Left eye
+            ctx.fillRect(
+                centerX - eyeOffset - eyeWidth/2,
+                centerY - eyeHeight/2,
+                eyeWidth,
+                eyeHeight
+            );
+
+            // Right eye
+            ctx.fillRect(
+                centerX + eyeOffset - eyeWidth/2,
+                centerY - eyeHeight/2,
+                eyeWidth,
+                eyeHeight
+            );
+
+            // Add inner highlight
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius * 0.8, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        function downloadIcon() {
+            drawVoiceOrb(512);
+            const link = document.createElement('a');
+            link.download = 'voice-orb-icon.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function generateTrayIcon() {
+            drawVoiceOrb(32);
+            const link = document.createElement('a');
+            link.download = 'tray-icon.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // Draw initial icon
+        drawVoiceOrb();
+    </script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1e1e2e">
+    <title>Sentauri - AI Design System Assistant</title>
+    
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    
+    <!-- Main Styles -->
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/themes.css">
+</head>
+<body data-theme="dark">
+    <!-- SVG Icon Sprites -->
+    <svg style="display: none;">
+        <defs>
+            <symbol id="icon-menu" viewBox="0 0 24 24">
+                <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </symbol>
+            <symbol id="icon-close" viewBox="0 0 24 24">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </symbol>
+            <symbol id="icon-send" viewBox="0 0 24 24">
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </symbol>
+            <symbol id="icon-copy" viewBox="0 0 24 24">
+                <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/>
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2"/>
+            </symbol>
+            <symbol id="icon-edit" viewBox="0 0 24 24">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2"/>
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2"/>
+            </symbol>
+            <symbol id="icon-delete" viewBox="0 0 24 24">
+                <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </symbol>
+            <symbol id="icon-settings" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 1v6m0 6v6m4.22-13.22l4.24 4.24M1.54 16.46l4.24 4.24M23 12h-6m-6 0H1m4.22 7.78l4.24-4.24M20.46 7.54l-4.24-4.24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </symbol>
+            <symbol id="icon-alert" viewBox="0 0 24 24">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </symbol>
+        </defs>
+    </svg>
+
+    <!-- Main Application Container -->
+    <div id="app" class="app-container">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="app-title">Sentauri</h1>
+                <button id="sidebar-toggle" class="icon-button" aria-label="Toggle Sidebar">
+                    <svg class="icon"><use xlink:href="#icon-close"></use></svg>
+                </button>
+            </div>
+            
+            <!-- Tab Navigation -->
+            <nav class="tab-navigation">
+                <button class="tab-button active" data-tab="chat">Chat</button>
+                <button class="tab-button" data-tab="components">Components</button>
+                <button class="tab-button" data-tab="mcp-tools">MCP Tools</button>
+            </nav>
+            
+            <!-- Conversation List -->
+            <div class="conversation-section">
+                <div class="section-header">
+                    <h2>Conversations</h2>
+                    <button id="new-conversation-btn" class="primary-button small">New Chat</button>
+                </div>
+                <div id="conversation-list" class="conversation-list">
+                    <!-- Conversation items will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Settings Button -->
+            <div class="sidebar-footer">
+                <button id="settings-button" class="icon-text-button">
+                    <svg class="icon"><use xlink:href="#icon-settings"></use></svg>
+                    <span>Settings</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-left">
+                    <button id="mobile-menu-toggle" class="icon-button mobile-only" aria-label="Toggle Menu">
+                        <svg class="icon"><use xlink:href="#icon-menu"></use></svg>
+                    </button>
+                    <span id="current-conversation-title">New Chat</span>
+                </div>
+                <div class="status-right">
+                    <span id="status-indicator" class="status-indicator"></span>
+                    <span id="connection-status">Connecting...</span>
+                </div>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="tab-contents">
+                <!-- Chat Tab -->
+                <div id="chat-tab" class="tab-content active">
+                    <div id="chat-container" class="chat-container">
+                        <div id="messages-container" class="messages-container">
+                            <!-- Messages will be inserted here -->
+                        </div>
+                        
+                        <div id="input-container" class="input-container">
+                            <textarea 
+                                id="message-input" 
+                                class="message-input" 
+                                placeholder="Type your message... (Shift+Enter for new line)"
+                                rows="1"
+                            ></textarea>
+                            <button id="send-button" class="send-button" aria-label="Send Message">
+                                <svg class="icon"><use xlink:href="#icon-send"></use></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Components Tab -->
+                <div id="components-tab" class="tab-content">
+                    <div class="components-container">
+                        <h2>Component Library</h2>
+                        <p>Browse and manage your design system components.</p>
+                        <!-- Component content will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- MCP Tools Tab -->
+                <div id="mcp-tools-tab" class="tab-content">
+                    <div class="mcp-container">
+                        <h2>MCP Tools</h2>
+                        <p>Manage Model Context Protocol servers and tools.</p>
+                        <!-- MCP tools content will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button id="settings-close" class="icon-button" aria-label="Close Settings">
+                    <svg class="icon"><use xlink:href="#icon-close"></use></svg>
+                </button>
+            </div>
+            
+            <form id="settings-form" class="settings-form">
+                <!-- AI Provider Settings -->
+                <fieldset>
+                    <legend>AI Provider</legend>
+                    
+                    <div class="form-group">
+                        <label for="api-provider">Provider</label>
+                        <select id="api-provider" name="apiProvider">
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic Claude</option>
+                            <option value="google">Google Gemini</option>
+                            <option value="ollama">Ollama (Local)</option>
+                            <option value="lmstudio">LM Studio (Local)</option>
+                            <option value="localai">LocalAI</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="api-key">API Key</label>
+                        <input type="password" id="api-key" name="apiKey" placeholder="Enter your API key">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="api-model">Model</label>
+                        <select id="api-model" name="apiModel">
+                            <!-- Options populated dynamically -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="api-endpoint">Custom Endpoint (Optional)</label>
+                        <input type="url" id="api-endpoint" name="apiEndpoint" placeholder="https://api.example.com">
+                    </div>
+                    
+                    <button type="button" id="auto-detect-btn" class="secondary-button" style="display: none;">
+                        Auto-Detect Models
+                    </button>
+                </fieldset>
+
+                <!-- Generation Settings -->
+                <fieldset>
+                    <legend>Generation Settings</legend>
+                    
+                    <div class="form-group">
+                        <label for="max-tokens">Max Tokens</label>
+                        <input type="number" id="max-tokens" name="maxTokens" min="100" max="4000" value="2000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="temperature">Temperature</label>
+                        <input type="range" id="temperature" name="temperature" min="0" max="2" step="0.1" value="0.7">
+                        <span id="temperature-value">0.7</span>
+                    </div>
+                    
+                    <div class="form-group checkbox">
+                        <input type="checkbox" id="stream-responses" name="streamResponses" checked>
+                        <label for="stream-responses">Stream Responses</label>
+                    </div>
+                </fieldset>
+
+                <!-- Appearance Settings -->
+                <fieldset>
+                    <legend>Appearance</legend>
+                    
+                    <div class="form-group">
+                        <label for="theme">Theme</label>
+                        <select id="theme" name="theme">
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                            <option value="auto">System</option>
+                        </select>
+                    </div>
+                </fieldset>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="primary-button">Save Settings</button>
+                    <button type="button" id="reset-settings" class="secondary-button">Reset to Defaults</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Load Scripts -->
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/16.2.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    
+    <!-- Application Modules -->
+    <script src="modules/ConfigManager.js"></script>
+    <script src="modules/ConversationManager.js"></script>
+    <script src="modules/AIProvider.js"></script>
+    <script src="modules/UIManager.js"></script>
+    
+    <!-- Web Components -->
+    <script src="components/WebComponents.js"></script>
+    
+    <!-- Main Application -->
+    <script src="app-refactored.js"></script>
+</body>
+</html>

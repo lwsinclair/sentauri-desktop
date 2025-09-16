@@ -1,0 +1,205 @@
+/* Theme Variables */
+
+/* Light Theme */
+[data-theme="light"] {
+    /* Background Colors */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-hover: #e9ecef;
+    --bg-active: #dee2e6;
+    --bg-toast: #343a40;
+    
+    /* Text Colors */
+    --text-primary: #212529;
+    --text-secondary: #495057;
+    --text-tertiary: #6c757d;
+    
+    /* Border Colors */
+    --border-color: #dee2e6;
+    
+    /* Message Colors */
+    --message-bg: #f8f9fa;
+    --user-message-bg: #e3f2fd;
+    --assistant-message-bg: #f5f5f5;
+    
+    /* Code Colors */
+    --code-bg: #f6f8fa;
+    
+    /* Error Colors */
+    --error-bg: #f8d7da;
+    --error-color: #721c24;
+    --error-border: #f5c6cb;
+    
+    /* Primary Hover */
+    --primary-hover: #0056b3;
+    
+    /* Scrollbar */
+    --scrollbar-thumb: #ced4da;
+    --scrollbar-hover: #adb5bd;
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+    /* Background Colors */
+    --bg-primary: #1e1e2e;
+    --bg-secondary: #2a2a3e;
+    --bg-hover: #35355a;
+    --bg-active: #45457a;
+    --bg-toast: #45475a;
+    
+    /* Text Colors */
+    --text-primary: #cdd6f4;
+    --text-secondary: #a6adc8;
+    --text-tertiary: #7f849c;
+    
+    /* Border Colors */
+    --border-color: #313244;
+    
+    /* Message Colors */
+    --message-bg: #2a2a3e;
+    --user-message-bg: #313244;
+    --assistant-message-bg: #2a2a3e;
+    
+    /* Code Colors */
+    --code-bg: #181825;
+    
+    /* Error Colors */
+    --error-bg: rgba(243, 139, 168, 0.1);
+    --error-color: #f38ba8;
+    --error-border: rgba(243, 139, 168, 0.3);
+    
+    /* Primary Hover */
+    --primary-hover: #1e66f5;
+    
+    /* Scrollbar */
+    --scrollbar-thumb: #45475a;
+    --scrollbar-hover: #585b70;
+}
+
+/* Auto Theme (System Preference) */
+@media (prefers-color-scheme: dark) {
+    [data-theme="auto"] {
+        /* Dark theme values */
+        --bg-primary: #1e1e2e;
+        --bg-secondary: #2a2a3e;
+        --bg-hover: #35355a;
+        --bg-active: #45457a;
+        --bg-toast: #45475a;
+        
+        --text-primary: #cdd6f4;
+        --text-secondary: #a6adc8;
+        --text-tertiary: #7f849c;
+        
+        --border-color: #313244;
+        
+        --message-bg: #2a2a3e;
+        --user-message-bg: #313244;
+        --assistant-message-bg: #2a2a3e;
+        
+        --code-bg: #181825;
+        
+        --error-bg: rgba(243, 139, 168, 0.1);
+        --error-color: #f38ba8;
+        --error-border: rgba(243, 139, 168, 0.3);
+        
+        --primary-hover: #1e66f5;
+        
+        --scrollbar-thumb: #45475a;
+        --scrollbar-hover: #585b70;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    [data-theme="auto"] {
+        /* Light theme values */
+        --bg-primary: #ffffff;
+        --bg-secondary: #f8f9fa;
+        --bg-hover: #e9ecef;
+        --bg-active: #dee2e6;
+        --bg-toast: #343a40;
+        
+        --text-primary: #212529;
+        --text-secondary: #495057;
+        --text-tertiary: #6c757d;
+        
+        --border-color: #dee2e6;
+        
+        --message-bg: #f8f9fa;
+        --user-message-bg: #e3f2fd;
+        --assistant-message-bg: #f5f5f5;
+        
+        --code-bg: #f6f8fa;
+        
+        --error-bg: #f8d7da;
+        --error-color: #721c24;
+        --error-border: #f5c6cb;
+        
+        --primary-hover: #0056b3;
+        
+        --scrollbar-thumb: #ced4da;
+        --scrollbar-hover: #adb5bd;
+    }
+}
+
+/* Syntax Highlighting Theme Overrides */
+[data-theme="dark"] .token.comment,
+[data-theme="dark"] .token.prolog,
+[data-theme="dark"] .token.doctype,
+[data-theme="dark"] .token.cdata {
+    color: #6c7086;
+}
+
+[data-theme="dark"] .token.punctuation {
+    color: #a6adc8;
+}
+
+[data-theme="dark"] .token.property,
+[data-theme="dark"] .token.tag,
+[data-theme="dark"] .token.boolean,
+[data-theme="dark"] .token.number,
+[data-theme="dark"] .token.constant,
+[data-theme="dark"] .token.symbol,
+[data-theme="dark"] .token.deleted {
+    color: #f38ba8;
+}
+
+[data-theme="dark"] .token.selector,
+[data-theme="dark"] .token.attr-name,
+[data-theme="dark"] .token.string,
+[data-theme="dark"] .token.char,
+[data-theme="dark"] .token.builtin,
+[data-theme="dark"] .token.inserted {
+    color: #a6e3a1;
+}
+
+[data-theme="dark"] .token.operator,
+[data-theme="dark"] .token.entity,
+[data-theme="dark"] .token.url,
+[data-theme="dark"] .language-css .token.string,
+[data-theme="dark"] .style .token.string {
+    color: #fab387;
+}
+
+[data-theme="dark"] .token.atrule,
+[data-theme="dark"] .token.attr-value,
+[data-theme="dark"] .token.keyword {
+    color: #cba6f7;
+}
+
+[data-theme="dark"] .token.function,
+[data-theme="dark"] .token.class-name {
+    color: #89b4fa;
+}
+
+[data-theme="dark"] .token.regex,
+[data-theme="dark"] .token.important,
+[data-theme="dark"] .token.variable {
+    color: #f9e2af;
+}
+
+/* Theme Transition */
+* {
+    transition: background-color var(--transition-normal), 
+                color var(--transition-normal),
+                border-color var(--transition-normal);
+}

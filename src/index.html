@@ -1,0 +1,3589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Content Security Policy for enhanced security -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob:; connect-src 'self' http://localhost:* https:; font-src 'self' data:;">
+    <title>Sentauri</title>
+    <!-- Prism.js for syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        /* Desktop App Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.95) 0%, rgba(15, 23, 42, 0.95) 50%, rgba(30, 58, 138, 0.95) 100%);
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+
+        /* Header */
+        /* Main Content */
+        .main-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            transition: left 0.3s ease;
+        }
+
+        .main-content.sidebar-open {
+            left: 260px;  /* Shift content when sidebar is open */
+        }
+
+        /* Main Header (top bar in main content) */
+        .main-header {
+            height: 70px;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            background: transparent;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Center the status in middle column */
+        .main-header .app-status {
+            grid-column: 2;
+            justify-self: center;
+        }
+        
+        /* Position header actions to the right */
+        .main-header .header-actions {
+            grid-column: 3;
+            justify-self: end;
+        }
+        
+
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .app-orb {
+            width: 28px;
+            height: 28px;
+            background: radial-gradient(circle at 30% 30%, #e8f0ff 0%, #C5D1E0 50%, #a0b8d0 100%);
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 8px 3px rgba(59, 130, 246, 0.3);
+            animation: orb-pulse 3s infinite ease-in-out;
+        }
+
+        @keyframes orb-pulse {
+            0%, 100% {
+                box-shadow: 0 0 8px 3px rgba(59, 130, 246, 0.3),
+                           0 0 16px 8px rgba(0, 206, 200, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 12px 5px rgba(59, 130, 246, 0.4),
+                           0 0 20px 10px rgba(0, 206, 200, 0.3);
+            }
+        }
+
+        .app-orb .eye {
+            position: absolute;
+            width: 2px;
+            height: 5px;
+            background: linear-gradient(180deg, #3B82F6 0%, #00CEC8 100%);
+            border-radius: 1px;
+        }
+
+        .app-orb .eye1 { transform: translateX(-4px); }
+        .app-orb .eye2 { transform: translateX(4px); }
+
+        .app-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            opacity: 0.9;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #48bb78;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.disconnected {
+            background: #f56565;
+            animation: none;
+        }
+
+        .status-dot.connecting {
+            background: #fbbf24;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .header-btn {
+            background: transparent; /* Changed from rgba(255, 255, 255, 0.1) */
+            border: none;
+            color: rgba(255, 255, 255, 0.7); /* Slightly dimmer when not hovered */
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.1); /* Only show background on hover */
+            color: white; /* Brighten on hover */
+            transform: scale(1.1); /* Slight scale effect */
+        }
+
+        /* App Layout */
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Fixed Controls (highest z-index) */
+        .fixed-controls {
+            position: fixed;
+            top: 0;
+            left: 80px;  /* Position after macOS traffic lights */
+            height: 70px;
+            width: auto;
+            display: flex;
+            align-items: center;
+            z-index: 10000;  /* Highest z-index */
+            padding: 0 10px;
+            background: transparent;
+            transition: all 0.3s ease;  /* Smooth transition */
+            border-bottom: none !important;
+            box-shadow: none !important;
+        }
+        
+        /* Fixed Controls when sidebar is open */
+        .fixed-controls.sidebar-open {
+            left: 0;
+            width: 260px;  /* Match sidebar width */
+            padding-left: 90px;  /* Space for macOS traffic lights */
+            background: rgba(15, 23, 42, 0.95);  /* Same as sidebar */
+            backdrop-filter: blur(20px);
+            border-bottom: none !important;
+            box-shadow: none !important;
+        }
+        
+        /* Remove any ::after pseudo-element */
+        .fixed-controls::after {
+            display: none;
+        }
+
+
+        /* Fixed Menu Toggle */
+        .fixed-controls .menu-toggle {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            -webkit-app-region: no-drag;
+        }
+
+        .fixed-controls .menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        /* Adjust menu toggle appearance when sidebar is open */
+        .fixed-controls.sidebar-open .menu-toggle {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* App Wrapper */
+        .app-wrapper {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            position: relative;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: -260px;  /* Hidden by default */
+            top: 0;
+            bottom: 0;
+            width: 260px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            padding-top: 70px;  /* Space for fixed controls */
+            transition: left 0.3s ease;
+            z-index: 9999;      /* Below fixed controls */
+            overflow-y: auto;
+            border: none !important;
+        }
+        
+        /* Remove any pseudo-elements that might create lines */
+        .sidebar::before,
+        .sidebar::after {
+            display: none !important;
+        }
+
+        .sidebar.open {
+            left: 0;  /* Slide in */
+        }
+
+
+        .sidebar-tabs {
+            padding: 16px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            /* Removed border-bottom divider */
+        }
+
+        .sidebar-tab {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.6);
+            transition: all 0.2s ease;
+            text-align: left;
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .sidebar-tab svg {
+            flex-shrink: 0;
+        }
+        
+        /* New Chat button special styling */
+        .sidebar-tab.new-chat-btn {
+            padding: 8px 12px;
+            background: transparent;
+        }
+        
+        .new-chat-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #3B82F6 0%, #00CEC8 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+        }
+        
+        .new-chat-icon svg {
+            stroke: white;
+            stroke-width: 2.5;
+            width: 14px;
+            height: 14px;
+        }
+        
+        .sidebar-tab.new-chat-btn:hover .new-chat-icon {
+            transform: scale(1.05);
+            box-shadow: 0 3px 12px rgba(59, 130, 246, 0.35);
+        }
+        
+        .sidebar-tab.new-chat-btn .sidebar-tab-label {
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        .sidebar-tab:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .sidebar-tab.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .sidebar-tab.active::before {
+            display: none;
+        }
+
+        .sidebar-tab-label {
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar.collapsed .sidebar-tab-label {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .sidebar.collapsed .sidebar-tab {
+            padding: 12px;
+            justify-content: center;
+        }
+
+        /* Sidebar Bottom */
+        .sidebar-bottom {
+            margin-top: auto;
+            padding: 20px 0;
+        }
+
+        /* Menu Toggle */
+        .menu-toggle {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.7); /* Match sidebar icon color */
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 4px;
+        }
+
+        .menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            transform: scale(1.05);
+            color: rgba(255, 255, 255, 0.9); /* Brighten on hover like sidebar */
+        }
+
+        /* Logo click cursor */
+        .app-title {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        /* Main Content */
+
+        .tab-content {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            min-height: 0; /* Allow flex shrinking */
+            height: 100%;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        
+
+
+        /* Sidebar Search */
+        .sidebar-search {
+            padding: 16px;
+            margin-bottom: 0;
+        }
+
+        .search-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.4);
+            z-index: 1;
+            width: 14px;
+            height: 14px;
+            pointer-events: none; /* Add this so clicks go through to input */
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-radius: 6px;
+            padding: 8px 10px 8px 32px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 13px;
+        }
+
+        .search-input:focus {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.15);
+        }
+
+        /* Chat */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            position: relative; /* Allow flex shrinking */
+            height: 100%;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-height: 0; /* Allow flex shrinking */
+        }
+
+        .chat-message {
+            display: flex;
+            gap: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            background: radial-gradient(circle at 30% 30%, #e8f0ff 0%, #C5D1E0 50%, #a0b8d0 100%);
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            box-shadow: 0 0 6px 2px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Voice Orb Avatar Styles */
+        .voice-orb {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .orb-gradient {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4), rgba(200, 220, 255, 0.3) 30%, rgba(150, 180, 255, 0.2) 60%, rgba(100, 140, 255, 0.1) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            position: relative;
+        }
+
+        .eye {
+            width: 2px;
+            height: 6px;
+            background: linear-gradient(180deg, #1E40AF 0%, #0EA5E9 100%);
+            border-radius: 1px;
+            animation: eyeGlow 2s ease-in-out infinite alternate;
+        }
+
+        .eye-left {
+            transform: translateX(-2px);
+        }
+
+        .eye-right {
+            transform: translateX(2px);
+        }
+
+        @keyframes eyeGlow {
+            0% { 
+                box-shadow: 0 0 4px rgba(30, 64, 175, 0.6);
+                background: linear-gradient(180deg, #1E40AF 0%, #0EA5E9 100%);
+            }
+            100% { 
+                box-shadow: 0 0 8px rgba(14, 165, 233, 0.8);
+                background: linear-gradient(180deg, #0EA5E9 0%, #06B6D4 100%);
+            }
+        }
+
+        .chat-message.user .message-avatar {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            box-shadow: 0 0 6px 2px rgba(72, 187, 120, 0.3);
+        }
+
+        .message-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 14px;
+            border-radius: 12px;
+            max-width: 80%;
+            font-size: 14px;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .chat-message.user .message-content {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(0, 206, 200, 0.2) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: white;
+        }
+
+        /* Chat Input - Stacked Layout */
+        .chat-input-area {
+            padding: 16px;
+            background: transparent;
+            flex-shrink: 0;
+        }
+
+        .chat-input-container {
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .input-field-wrapper {
+            width: 100%;
+        }
+
+        .chat-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            color: white;
+            outline: none;
+            font-family: inherit;
+            resize: none;
+            overflow-y: hidden;
+            line-height: 1.5;
+            min-height: 24px;
+            max-height: 120px;
+        }
+
+        .chat-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .chat-input:focus {
+            outline: none;
+        }
+
+        /* Input Controls Row */
+        .input-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Control Buttons */
+        .control-btn {
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Model Selector */
+        .model-selector {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            height: 38px;
+            border-radius: 10px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+        }
+
+        .model-selector:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .model-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Send Button */
+        .send-btn {
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #3B82F6 0%, #00CEC8 100%);
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 3px 10px rgba(59, 130, 246, 0.3);
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Stop Button */
+        .stop-btn {
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            border-radius: 10px;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .stop-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        /* Tooltips */
+        [data-tooltip] {
+            position: relative;
+        }
+
+        [data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%) scale(0.9);
+            padding: 6px 10px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 6px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.2s ease;
+            z-index: 1000;
+        }
+
+        [data-tooltip]:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+
+        /* Settings Modal */
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;  /* Prevent blocking when hidden */
+        }
+
+        .settings-modal.active {
+            display: flex;
+            opacity: 1;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;  /* Enable interactions when active */
+        }
+
+        .settings-content {
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.95), rgba(15, 23, 42, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .settings-header {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(0, 206, 200, 0.2) 100%);
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .settings-title {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .settings-body {
+            padding: 20px;
+        }
+
+        .settings-section {
+            margin-bottom: 25px;
+        }
+
+        .settings-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .settings-group {
+            margin-bottom: 15px;
+        }
+
+        .settings-label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        .settings-input,
+        .settings-select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 14px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .settings-input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .settings-input:focus,
+        .settings-select:focus {
+            outline: none;
+            border-color: rgba(59, 130, 246, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .settings-select option {
+            background: #1e3a8a;
+            color: white;
+        }
+
+        .settings-help {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 5px;
+        }
+
+        .settings-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .settings-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .settings-btn-primary {
+            background: linear-gradient(135deg, #3B82F6 0%, #00CEC8 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .settings-btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .settings-btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .settings-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .settings-test-btn {
+            padding: 6px 12px;
+            background: linear-gradient(135deg, #3B82F6 0%, #00CEC8 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 10px;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .settings-test-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Loading animation */
+        .loading {
+            display: flex;
+            gap: 4px;
+            padding: 0 5px;
+        }
+
+        .loading span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3B82F6 0%, #00CEC8 100%);
+            animation: loading 1.4s infinite ease-in-out both;
+        }
+
+        .loading span:nth-child(1) { animation-delay: -0.32s; }
+        .loading span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes loading {
+            0%, 80%, 100% {
+                transform: scale(0);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Markdown content styling */
+        .message-content h1, .message-content h2, .message-content h3,
+        .message-content h4, .message-content h5, .message-content h6 {
+            margin: 15px 0 10px 0;
+            font-weight: 600;
+        }
+
+        .message-content h1 { font-size: 1.5em; }
+        .message-content h2 { font-size: 1.3em; }
+        .message-content h3 { font-size: 1.1em; }
+
+        .message-content p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .message-content ul, .message-content ol {
+            margin: 10px 0 10px 20px;
+        }
+
+        .message-content li {
+            margin: 5px 0;
+        }
+
+        .message-content code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .message-content pre,
+        pre {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .message-content pre code,
+        pre code {
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            background: none;
+            padding: 0;
+        }
+
+        /* Copy button for code blocks */
+        .copy-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(59, 130, 246, 0.3);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+
+        .copy-button:hover {
+            background: rgba(59, 130, 246, 0.5);
+            transform: scale(1.05);
+        }
+
+        /* Prism.js theme overrides for dark mode */
+        .token.comment { color: #8B949E; }
+        .token.string { color: #A5D6FF; }
+        .token.keyword { color: #FF7B72; }
+        .token.function { color: #D2A8FF; }
+        .token.number { color: #79C0FF; }
+        .token.operator { color: #FF7B72; }
+        .token.class-name { color: #FFA657; }
+        .token.boolean { color: #79C0FF; }
+        .token.property { color: #79C0FF; }
+        .token.tag { color: #7EE787; }
+        .token.selector { color: #D2A8FF; }
+        .token.attr-name { color: #79C0FF; }
+        .token.attr-value { color: #A5D6FF; }
+        .token.punctuation { color: #8B949E; }
+
+        .message-content blockquote {
+            border-left: 3px solid rgba(59, 130, 246, 0.5);
+            padding-left: 15px;
+            margin: 15px 0;
+            color: rgba(255, 255, 255, 0.8);
+            font-style: italic;
+        }
+
+        .message-content table {
+            border-collapse: collapse;
+            margin: 15px 0;
+            width: 100%;
+        }
+
+        .message-content th, .message-content td {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        .message-content th {
+            background: rgba(255, 255, 255, 0.05);
+            font-weight: 600;
+        }
+
+        .message-content hr {
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 20px 0;
+        }
+
+        /* Conversation List */
+        .conversation-list {
+            margin-top: 20px;
+            padding: 0 10px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .conversation-header {
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.9);  /* Updated to match New Chat */
+            font-weight: 600;
+        }
+
+        .collapse-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.9);  /* Updated to match New Chat */
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .collapse-btn svg {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .collapse-btn:hover {
+            color: rgba(255, 255, 255, 1);  /* Brighter on hover */
+        }
+
+        .collapse-btn.collapsed svg {
+            transform: rotate(-90deg);
+        }
+
+        .conversation-items {
+            max-height: 400px;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                        opacity 0.3s ease,
+                        padding 0.3s ease;
+            opacity: 1;
+            padding: 0 5px;
+        }
+        
+        .conversation-items:not(.collapsed) {
+            overflow-y: auto;
+        }
+
+        .conversation-items.collapsed {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Duplicate .search-input removed - using the one defined at line 318 */
+        /* Conversation items styles moved up and enhanced with transitions */
+
+        .conversation-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.2s;
+        }
+
+        .conversation-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .conversation-item.active {
+            background: rgba(59, 130, 246, 0.3);
+        }
+
+        .conversation-title {
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .conversation-date {
+            font-size: 11px;
+            opacity: 0.6;
+            margin-top: 4px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .conversation-delete {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            font-size: 18px;
+            display: none;
+            padding: 2px;
+            line-height: 1;
+        }
+
+        .conversation-item:hover .conversation-delete {
+            display: block;
+        }
+
+        .conversation-delete:hover {
+            color: #ef4444;
+        }
+
+        /* Desktop-specific styles */
+        .desktop-info {
+            padding: 15px 20px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+
+        /* MCP Modal and Container */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .mcp-modal-content {
+            background: #1a1a1a;
+            margin: 5% auto;
+            padding: 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 80%;
+            max-width: 900px;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-close {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover,
+        .modal-close:focus {
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .mcp-container {
+            padding: 30px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .mcp-server-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .mcp-server-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .mcp-server-info {
+            flex: 1;
+        }
+
+        .mcp-server-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 4px;
+        }
+
+        .mcp-server-description {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .mcp-server-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mcp-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(239, 68, 68, 0.8);
+        }
+
+        .mcp-status-dot.running {
+            background: rgba(34, 197, 94, 0.8);
+            animation: pulse 2s infinite;
+        }
+
+        .mcp-server-button {
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #3B82F6;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .mcp-server-button:hover {
+            background: rgba(59, 130, 246, 0.3);
+        }
+
+        .mcp-server-button.stop {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .mcp-server-button.stop:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .mcp-tool-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .mcp-tool-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .mcp-tool-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #3B82F6;
+            margin-bottom: 4px;
+        }
+
+        .mcp-tool-description {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .tool-output {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 100px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            white-space: pre-wrap;
+        }
+
+        /* Context Menu Styles */
+        .mcp-context-menu {
+            position: absolute;
+            bottom: 50px;
+            left: 85px;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
+            padding: 8px;
+            min-width: 200px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 40px rgba(59, 130, 246, 0.1);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            animation: contextMenuFadeIn 0.2s ease;
+        }
+
+        @keyframes contextMenuFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .context-menu-arrow {
+            position: absolute;
+            bottom: -6px;
+            left: 24px;
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(135deg, #2a2a2a 0%, #2a2a2a 100%);
+            border-right: 1px solid rgba(59, 130, 246, 0.2);
+            border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+            transform: rotate(45deg);
+            z-index: -1;
+        }
+
+        .context-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .context-menu-item:hover {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.25) 100%);
+            color: rgba(255, 255, 255, 1);
+            transform: translateX(2px);
+        }
+
+        .context-menu-item:hover svg {
+            opacity: 1;
+            color: #3B82F6;
+        }
+
+        .context-menu-item svg {
+            opacity: 0.6;
+            transition: all 0.2s ease;
+            width: 16px;
+            height: 16px;
+        }
+
+        .context-menu-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, rgba(59, 130, 246, 0.2) 50%, transparent 100%);
+            margin: 8px 12px;
+        }
+
+        /* MCP Notifications */
+        .mcp-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 12px 16px;
+            max-width: 350px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            z-index: 10001;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+
+        .mcp-notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .mcp-notification-error {
+            border-color: rgba(239, 68, 68, 0.5);
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+        }
+
+        .mcp-notification-success {
+            border-color: rgba(34, 197, 94, 0.5);
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);
+        }
+
+        .notification-content {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            display: inline-block;
+            color: #3B82F6;
+            font-size: 13px;
+            padding: 10px;
+        }
+
+        .loading-spinner::after {
+            content: '';
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-left: 8px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-top-color: #3B82F6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-container {
+            padding: 12px;
+            border-left: 3px solid #ef4444;
+            background: rgba(239, 68, 68, 0.05);
+            border-radius: 4px;
+        }
+
+        .analysis-drop-zone {
+            border: 2px dashed rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 60px 40px;
+            text-align: center;
+            background: rgba(59, 130, 246, 0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+
+        .analysis-drop-zone:hover {
+            border-color: rgba(59, 130, 246, 0.5);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .analysis-drop-zone.dragover {
+            border-color: rgba(59, 130, 246, 0.7);
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        .analysis-drop-zone p {
+            margin: 10px 0;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+        }
+
+        .analysis-results {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 200px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .analysis-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 3px solid rgba(59, 130, 246, 0.5);
+        }
+
+        .analysis-item h3 {
+            color: #3B82F6;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .analysis-item p {
+            margin: 5px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Context Menu Styles */
+        .context-menu {
+            position: fixed;
+            background: rgba(30, 41, 59, 0.98);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 8px;
+            padding: 6px 0;
+            min-width: 200px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            z-index: 10000;
+            display: none;
+            animation: contextMenuFadeIn 0.15s ease-out;
+        }
+
+        @keyframes contextMenuFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .context-menu-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .context-menu-item:hover {
+            background: rgba(59, 130, 246, 0.15);
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .context-menu-item.active {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3B82F6;
+        }
+
+        .context-menu-item.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .context-menu-item.has-submenu::after {
+            content: '▶';
+            position: absolute;
+            right: 12px;
+            font-size: 10px;
+            opacity: 0.6;
+        }
+
+        .context-menu-separator {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 4px 0;
+        }
+
+        .context-menu-submenu {
+            position: absolute;
+            left: 100%;
+            top: 0;
+            margin-left: 4px;
+            background: rgba(30, 41, 59, 0.98);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 8px;
+            padding: 6px 0;
+            min-width: 180px;
+            display: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .context-menu-item:hover .context-menu-submenu {
+            display: block;
+        }
+
+        .context-menu-icon {
+            width: 16px;
+            height: 16px;
+            opacity: 0.7;
+        }
+
+        .context-menu-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: rgba(59, 130, 246, 0.2);
+            color: rgba(59, 130, 246, 0.9);
+            margin-left: auto;
+        }
+
+        .context-menu-badge.local {
+            background: rgba(34, 197, 94, 0.2);
+            color: rgba(34, 197, 94, 0.9);
+        }
+
+        /* Provider Management Modal */
+        .provider-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+
+        .provider-modal-content {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .provider-modal-header {
+            padding: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .provider-modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: white;
+            margin: 0;
+        }
+
+        .provider-modal-close {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .provider-modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .provider-modal-refresh {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .provider-modal-refresh:hover {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3B82F6;
+            transform: rotate(180deg);
+        }
+
+        .provider-modal-body {
+            padding: 24px;
+        }
+
+        .provider-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 12px;
+        }
+
+        .provider-tab {
+            padding: 8px 16px;
+            background: none;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .provider-tab:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .provider-tab.active {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: white;
+        }
+
+        .provider-form-group {
+            margin-bottom: 20px;
+        }
+
+        .provider-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+        }
+
+        .provider-select,
+        .provider-input {
+            width: 100%;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .provider-select:focus,
+        .provider-input:focus {
+            outline: none;
+            border-color: rgba(59, 130, 246, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .provider-input[type="password"] {
+            font-family: monospace;
+            letter-spacing: 2px;
+        }
+
+        .provider-help {
+            margin-top: 6px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .provider-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .provider-status.connected {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+
+        .provider-status.disconnected {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .provider-status.testing {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+        }
+
+        .provider-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            justify-content: flex-end;
+        }
+
+        .provider-btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .provider-btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.7);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .provider-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+        }
+
+        .provider-btn-primary {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.8) 0%, rgba(0, 206, 200, 0.8) 100%);
+            color: white;
+            border: none;
+        }
+
+        .provider-btn-primary:hover {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 1) 0%, rgba(0, 206, 200, 1) 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .provider-btn-test {
+            background: rgba(139, 92, 246, 0.15);
+            color: #8b5cf6;
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+
+        .provider-btn-test:hover {
+            background: rgba(139, 92, 246, 0.25);
+            border-color: rgba(139, 92, 246, 0.5);
+        }
+
+        .provider-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .provider-card {
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .provider-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(59, 130, 246, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .provider-card.selected {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .provider-card-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .provider-card-type {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .provider-modal-content {
+                width: 95%;
+                max-height: 90vh;
+            }
+            
+            .provider-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* New Chat Welcome Screen */
+        .new-chat-welcome {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 120px; /* Leave space for chat input area */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            pointer-events: none; /* Allow clicks to pass through */
+            z-index: 1;
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.3s ease;
+        }
+        
+        .new-chat-welcome .welcome-content {
+            pointer-events: auto; /* But keep the content itself clickable if needed */
+        }
+
+        .new-chat-welcome.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-20px);
+        }
+
+        .welcome-content {
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        /* Sentauri Logo with Glow */
+        .sentauri-logo-container {
+            margin-bottom: 40px;
+        }
+
+        .sentauri-logo {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .logo-orb {
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle at 30% 30%, #e8f0ff 0%, #C5D1E0 50%, #a0b8d0 100%);
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto;
+            box-shadow: 
+                0 0 20px 5px rgba(59, 130, 246, 0.3),
+                0 0 40px 15px rgba(59, 130, 246, 0.2),
+                0 0 60px 25px rgba(59, 130, 246, 0.1);
+            animation: logoGlow 3s ease-in-out infinite;
+        }
+
+        .logo-orb .eye {
+            position: absolute;
+            width: 6px;
+            height: 16px;
+            background: linear-gradient(180deg, #3B82F6 0%, #00CEC8 100%);
+            border-radius: 3px;
+            animation: eyeBlink 4s infinite ease-in-out;
+        }
+
+        .logo-orb .eye1 { 
+            transform: translateX(-12px);
+            animation-delay: 0.5s;
+        }
+        
+        .logo-orb .eye2 { 
+            transform: translateX(12px);
+            animation-delay: 1s;
+        }
+
+        .logo-glow {
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes logoGlow {
+            0%, 100% {
+                box-shadow: 
+                    0 0 20px 5px rgba(59, 130, 246, 0.3),
+                    0 0 40px 15px rgba(59, 130, 246, 0.2),
+                    0 0 60px 25px rgba(59, 130, 246, 0.1);
+            }
+            50% {
+                box-shadow: 
+                    0 0 30px 8px rgba(59, 130, 246, 0.4),
+                    0 0 50px 18px rgba(59, 130, 246, 0.3),
+                    0 0 80px 30px rgba(59, 130, 246, 0.2);
+            }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+        }
+
+        @keyframes eyeBlink {
+            0%, 90%, 100% {
+                height: 16px;
+                opacity: 1;
+            }
+            95% {
+                height: 2px;
+                opacity: 0.8;
+            }
+        }
+
+        .welcome-title {
+            font-size: 48px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3B82F6 0%, #00CEC8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 8px 0;
+            letter-spacing: -0.5px;
+        }
+
+        .welcome-subtitle {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 400;
+            margin: 0;
+        }
+
+
+        /* Welcome Screen Responsive Design */
+        @media (max-width: 768px) {
+            .welcome-title {
+                font-size: 36px;
+            }
+            
+            .logo-orb {
+                width: 100px;
+                height: 100px;
+            }
+        }
+
+        /* Message Action Toolbar Styles */
+        .message-action-toolbar {
+            display: none;
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: transparent;
+            padding: 4px;
+            gap: 4px;
+            flex-direction: row;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .chat-message {
+            position: relative;
+        }
+
+        .chat-message:hover .message-action-toolbar {
+            display: flex;
+        }
+
+        .action-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.9);
+            transform: scale(1.1);
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .action-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .branch-btn:hover {
+            color: #10b981;
+        }
+
+        .copy-btn:hover {
+            color: #3b82f6;
+        }
+
+        .edit-btn:hover {
+            color: #f59e0b;
+        }
+
+        .delete-btn:hover {
+            color: #ef4444;
+        }
+
+        /* Adjust for user messages */
+        .chat-message.user .message-action-toolbar {
+            left: 8px;
+            right: auto;
+        }
+
+        /* Notification animations */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Fixed Controls (highest z-index) -->
+    <div class="fixed-controls">
+        <button class="menu-toggle" id="menuToggle">☰</button>
+    </div>
+
+    <!-- App Wrapper -->
+    <div class="app-wrapper">
+        <!-- Sidebar (slides under fixed controls) -->
+        <aside class="sidebar" id="sidebar">
+                <!-- Search Bar -->
+                <div class="sidebar-search">
+                    <div class="search-wrapper">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="M21 21l-4.35-4.35"/>
+                        </svg>
+                        <input 
+                            type="text" 
+                            class="search-input" 
+                            id="searchInput"
+                            placeholder="Search"
+                        >
+                    </div>
+                </div>
+                
+                <div class="sidebar-tabs">
+                    <button class="sidebar-tab new-chat-btn" data-tab="chat">
+                        <div class="new-chat-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                        </div>
+                        <span class="sidebar-tab-label">New Chat</span>
+                    </button>
+                </div>
+                
+                <!-- Conversation List -->
+                <div class="conversation-list" id="conversationList">
+                    <div class="conversation-header">
+                        <span>HISTORY</span>
+                        <button class="collapse-btn" id="historyToggleBtn" title="Toggle History">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="conversationItems" class="conversation-items">
+                        <!-- Items will be added dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Settings at bottom -->
+                <div class="sidebar-bottom">
+                    <button class="sidebar-tab" id="settingsBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <span class="sidebar-tab-label">Settings</span>
+                    </button>
+                </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar with connection status -->
+            <div class="main-header">
+                <div class="app-status">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">Not Connected</span>
+                </div>
+                <div class="header-actions">
+                    <button id="exportBtn" class="header-btn" title="Export Chat">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chat Area -->
+            <div class="chat-area">
+            <!-- Chat Tab -->
+            <div id="chat-tab" class="tab-content active">
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <!-- Welcome message will be added here -->
+                    </div>
+                    
+                    <!-- New Chat Welcome Screen -->
+                    <div class="new-chat-welcome" id="newChatWelcome">
+                        <div class="welcome-content">
+                            <!-- Sentauri Logo with Glow -->
+                            <div class="sentauri-logo-container">
+                                <div class="sentauri-logo">
+                                    <div class="logo-orb">
+                                        <div class="eye eye1"></div>
+                                        <div class="eye eye2"></div>
+                                    </div>
+                                    <div class="logo-glow"></div>
+                                </div>
+                                <h1 class="welcome-title">Sentauri</h1>
+                                <p class="welcome-subtitle">Your intelligent AI assistant</p>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <div class="chat-input-container">
+                            <!-- Textarea Section -->
+                            <div class="input-field-wrapper">
+                                <textarea 
+                                    class="chat-input" 
+                                    id="chatInput" 
+                                    placeholder="Ask me anything about your components..."
+                                    rows="1"
+                                ></textarea>
+                            </div>
+                            
+                            <!-- Icons Row -->
+                            <div class="input-controls">
+                                <!-- Left Icons -->
+                                <div class="control-group left">
+                                    <input 
+                                        type="file" 
+                                        id="fileInput" 
+                                        style="display: none;"
+                                        accept="*/*"
+                                        multiple
+                                    >
+                                    <button class="control-btn" id="uploadBtn" data-tooltip="Attach files">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                                        </svg>
+                                    </button>
+                                    <button class="control-btn" id="mcpBtn" data-tooltip="MCP Tools">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="rotate(180)">
+                                            <path d="M12 2v6"/>
+                                            <path d="M9 7h6"/>
+                                            <rect x="7" y="7" width="10" height="10" rx="1"/>
+                                            <path d="M9 22v-5"/>
+                                            <path d="M15 22v-5"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                
+                                <!-- Right Icons -->
+                                <div class="control-group right">
+                                    <div class="model-selector" id="modelSelector">
+                                        <span class="model-label">GPT-4</span>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </div>
+                                    <button class="control-btn" id="voiceBtn" data-tooltip="Voice input">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+                                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                            <line x1="12" y1="19" x2="12" y2="23"/>
+                                            <line x1="8" y1="23" x2="16" y2="23"/>
+                                        </svg>
+                                    </button>
+                                    <button class="stop-btn" id="stopBtn" style="display:none;">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="6" y="6" width="12" height="12"/>
+                                        </svg>
+                                    </button>
+                                    <button class="send-btn" id="sendBtn" data-tooltip="Send message">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 19V5"/>
+                                            <path d="M5 12l7-7 7 7"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- MCP Context Menu -->
+                            <div class="mcp-context-menu" id="mcpContextMenu" style="display: none;">
+                                <div class="context-menu-arrow"></div>
+                                <div class="context-menu-item" id="manageServersBtn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="7" height="7"/>
+                                        <rect x="14" y="3" width="7" height="7"/>
+                                        <rect x="14" y="14" width="7" height="7"/>
+                                        <rect x="3" y="14" width="7" height="7"/>
+                                    </svg>
+                                    <span>Manage Servers</span>
+                                </div>
+                                <div class="context-menu-item" id="addConnectorBtn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"/>
+                                        <line x1="5" y1="12" x2="19" y2="12"/>
+                                    </svg>
+                                    <span>Add Connector</span>
+                                </div>
+                                <div class="context-menu-divider"></div>
+                                <div class="context-menu-item" id="viewToolsBtn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                                    </svg>
+                                    <span>View Tools</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-content">
+            <div class="settings-header">
+                <div class="settings-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97 0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1 0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z"/>
+                    </svg>
+                    Sentauri Settings
+                </div>
+                <button class="header-btn" id="settingsCloseBtn">×</button>
+            </div>
+            <div class="settings-body">
+                <!-- Desktop Info -->
+                <div class="desktop-info">
+                    🖥️ <strong>Desktop App Features:</strong> Global shortcuts (Cmd+Shift+A to toggle, Cmd+Shift+C to quick chat), system tray, always-on-top mode, and persistent settings.
+                </div>
+
+                <!-- AI Provider Section -->
+                <div class="settings-section">
+                    <div class="settings-section-title">AI Provider Selection</div>
+                    
+                    <div class="settings-group">
+                        <label class="settings-label">🤖 AI Provider</label>
+                        <select class="settings-select" id="apiProvider">
+                            <option value="openai">OpenAI (Cloud)</option>
+                            <option value="anthropic">Anthropic Claude (Cloud)</option>
+                            <option value="google">Google Gemini (Cloud)</option>
+                            <option value="ollama">🖥️ Ollama (Local LLM)</option>
+                            <option value="lmstudio">🖥️ LM Studio (Local LLM)</option>
+                            <option value="localai">🖥️ LocalAI (Local LLM)</option>
+                            <option value="custom">Custom Endpoint</option>
+                        </select>
+                        <div class="settings-help">Choose your AI provider - Local options run on your computer!</div>
+                    </div>
+
+                    <div class="settings-group" id="apiKeyGroup">
+                        <label class="settings-label">API Key</label>
+                        <input 
+                            type="password" 
+                            class="settings-input" 
+                            id="apiKey" 
+                            placeholder="Enter your API key"
+                        >
+                        <div class="settings-help">Your API key is stored securely on your device</div>
+                    </div>
+
+                    <div class="settings-group" id="endpointGroup" style="display: none;">
+                        <label class="settings-label">
+                            Local Server Endpoint
+                            <button class="settings-test-btn" id="detectLocalBtn" style="display: none;">🔍 Auto-Detect</button>
+                        </label>
+                        <input 
+                            type="text" 
+                            class="settings-input" 
+                            id="apiEndpoint" 
+                            placeholder="http://localhost:11434"
+                        >
+                        <div class="settings-help" id="endpointHelp">Local server URL for your AI service</div>
+                    </div>
+
+                    <div class="settings-group">
+                        <label class="settings-label">
+                            Model
+                            <button class="settings-test-btn" id="refreshModelsBtn" style="display: none;">🔄 Refresh Models</button>
+                        </label>
+                        <select class="settings-select" id="apiModel">
+                            <option value="gpt-4">GPT-4</option>
+                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        </select>
+                        <div class="settings-help" id="modelHelp">Choose the AI model to use</div>
+                    </div>
+
+                    <div class="settings-group">
+                        <label class="settings-label">
+                            Connection Status: 
+                            <span id="connectionStatus" style="color: #f56565;">Not Connected</span>
+                            <button class="settings-test-btn" id="testConnectionBtn">🧪 Test Connection</button>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="settings-actions">
+                    <button class="settings-btn settings-btn-secondary" id="settingsCancelBtn">Cancel</button>
+                    <button class="settings-btn settings-btn-primary" id="settingsSaveBtn">Save Settings</button>
+                </div>
+            </div>
+        </div>
+        </div> <!-- Close app-layout -->
+    </div>
+
+    <!-- Context Menu -->
+    <div class="context-menu" id="modelContextMenu">
+        <!-- Menu items will be dynamically populated -->
+    </div>
+
+    <!-- Provider Management Modal -->
+    <div class="provider-modal" id="providerModal">
+        <div class="provider-modal-content">
+            <div class="provider-modal-header">
+                <h2 class="provider-modal-title">Manage AI Providers</h2>
+                <div style="display: flex; gap: 8px;">
+                    <button class="provider-modal-refresh" id="providerModalRefresh" title="Refresh all models">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                        </svg>
+                    </button>
+                    <button class="provider-modal-close" id="providerModalClose">×</button>
+                </div>
+            </div>
+            <div class="provider-modal-body">
+                <div class="provider-tabs">
+                    <button class="provider-tab active" data-tab="cloud">Cloud Providers</button>
+                    <button class="provider-tab" data-tab="local">Local LLMs</button>
+                    <button class="provider-tab" data-tab="custom">Custom Endpoints</button>
+                </div>
+                
+                <div class="provider-tab-content" id="cloudTab">
+                    <div class="provider-form-group">
+                        <label class="provider-label">Select Provider</label>
+                        <select class="provider-select" id="cloudProviderSelect">
+                            <option value="openai">OpenAI (GPT-4, GPT-3.5)</option>
+                            <option value="anthropic">Anthropic (Claude 3)</option>
+                            <option value="google">Google (Gemini Pro)</option>
+                            <option value="cohere">Cohere</option>
+                            <option value="mistral">Mistral AI</option>
+                        </select>
+                    </div>
+                    
+                    <div class="provider-form-group">
+                        <label class="provider-label">API Key</label>
+                        <input type="password" class="provider-input" id="cloudApiKey" placeholder="sk-..." />
+                        <div class="provider-help">Your API key is stored locally and never sent to our servers</div>
+                    </div>
+                    
+                    <div class="provider-form-group">
+                        <label class="provider-label">Model</label>
+                        <select class="provider-select" id="cloudModelSelect">
+                            <option value="gpt-4">GPT-4</option>
+                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        </select>
+                    </div>
+                    
+                    <div class="provider-form-group">
+                        <label class="provider-label">
+                            Connection Status
+                            <span class="provider-status disconnected" id="cloudStatus">
+                                <span class="status-dot"></span>
+                                Not Connected
+                            </span>
+                        </label>
+                        <button class="provider-btn provider-btn-test" id="cloudTestBtn">Test Connection</button>
+                    </div>
+                </div>
+                
+                <div class="provider-tab-content" id="localTab" style="display: none;">
+                    <div class="provider-form-group">
+                        <label class="provider-label">Local LLM Provider</label>
+                        <div class="provider-grid">
+                            <div class="provider-card" data-provider="ollama">
+                                <div class="provider-card-name">Ollama</div>
+                                <div class="provider-card-type">Runs on your computer</div>
+                            </div>
+                            <div class="provider-card" data-provider="lmstudio">
+                                <div class="provider-card-name">LM Studio</div>
+                                <div class="provider-card-type">Desktop app for LLMs</div>
+                            </div>
+                            <div class="provider-card" data-provider="localai">
+                                <div class="provider-card-name">LocalAI</div>
+                                <div class="provider-card-type">Self-hosted OpenAI alternative</div>
+                            </div>
+                            <div class="provider-card" data-provider="llamacpp">
+                                <div class="provider-card-name">llama.cpp</div>
+                                <div class="provider-card-type">C++ implementation</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="provider-form-group">
+                        <label class="provider-label">Endpoint URL</label>
+                        <input type="text" class="provider-input" id="localEndpoint" placeholder="http://localhost:11434" value="http://localhost:11434" />
+                    </div>
+                    
+                    <div class="provider-form-group">
+                        <label class="provider-label">Available Models</label>
+                        <select class="provider-select" id="localModelSelect">
+                            <option value="">Click 'Refresh Models' to load</option>
+                        </select>
+                    </div>
+                    
+                    <div class="provider-form-group">
+                        <label class="provider-label">
+                            Connection Status
+                            <span class="provider-status disconnected" id="localStatus">
+                                <span class="status-dot"></span>
+                                Not Connected
+                            </span>
+                        </label>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="provider-btn provider-btn-test" id="localTestBtn">Test Connection</button>
+                            <button class="provider-btn provider-btn-secondary" id="localRefreshBtn">Refresh Models</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="provider-tab-content" id="customTab" style="display: none;">
+                    <div class="provider-form-group">
+                        <label class="provider-label">Endpoint Name</label>
+                        <input type="text" class="provider-input" id="customName" placeholder="My Custom LLM" />
+                    </div>
+                    
+                    <div class="provider-form-group">
+                        <label class="provider-label">Base URL</label>
+                        <input type="text" class="provider-input" id="customUrl" placeholder="https://api.example.com/v1" />
+                    </div>
+                    
+                    <div class="provider-form-group">
+                        <label class="provider-label">API Key (if required)</label>
+                        <input type="password" class="provider-input" id="customApiKey" placeholder="Optional" />
+                    </div>
+                    
+                    <div class="provider-form-group">
+                        <label class="provider-label">Model Name</label>
+                        <input type="text" class="provider-input" id="customModel" placeholder="model-name" />
+                    </div>
+                    
+                    <div class="provider-form-group">
+                        <label class="provider-label">
+                            Headers (JSON format)
+                        </label>
+                        <textarea class="provider-input" id="customHeaders" rows="3" placeholder='{"Authorization": "Bearer YOUR_TOKEN"}'></textarea>
+                    </div>
+                </div>
+                
+                <div class="provider-actions">
+                    <button class="provider-btn provider-btn-secondary" id="providerCancelBtn">Cancel</button>
+                    <button class="provider-btn provider-btn-primary" id="providerSaveBtn">Save Configuration</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MCP Modal -->
+    <div class="modal" id="mcpModal" style="display: none;">
+        <div class="modal-content mcp-modal-content">
+            <div class="modal-header">
+                <h2 style="color: white; margin: 0;">MCP Tool Servers</h2>
+                <button class="modal-close" id="mcpCloseBtn">×</button>
+            </div>
+            <div class="mcp-container">
+                <div class="mcp-servers" id="mcpServers">
+                    <h3 style="color: rgba(255,255,255,0.8); font-size: 14px; margin-bottom: 15px;">Available Servers</h3>
+                    <div id="serverList">
+                        <!-- Server list will be populated here -->
+                    </div>
+                </div>
+
+                <div class="mcp-tools" id="mcpTools" style="margin-top: 30px;">
+                    <h3 style="color: rgba(255,255,255,0.8); font-size: 14px; margin-bottom: 15px;">Available Tools</h3>
+                    <div id="toolList">
+                        <!-- Tool list will be populated here -->
+                    </div>
+                </div>
+
+                <div class="mcp-output" id="mcpOutput" style="margin-top: 30px;">
+                    <h3 style="color: rgba(255,255,255,0.8); font-size: 14px; margin-bottom: 15px;">Tool Output</h3>
+                    <div id="toolOutput" class="tool-output">
+                        <!-- Tool execution results will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load libraries from CDN (works with Electron's context isolation) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-jsx.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markdown.min.js"></script>
+    
+    <!-- <script src="htmlSanitizer.js"></script> -->
+    <script src="mcp-integration.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Provider Management System
+        class ProviderManager {
+            constructor() {
+                this.providers = this.loadProviders();
+                this.currentProvider = localStorage.getItem('currentProvider') || 'openai';
+                this.currentModel = localStorage.getItem('currentModel') || 'gpt-4';
+                this.contextMenu = document.getElementById('modelContextMenu');
+                this.modal = document.getElementById('providerModal');
+                this.modelSelector = document.getElementById('modelSelector');
+                this.init();
+            }
+
+            init() {
+                this.setupContextMenu();
+                this.setupModal();
+                this.updateModelSelectorDisplay();
+            }
+
+            loadProviders() {
+                const stored = localStorage.getItem('aiProviders');
+                if (stored) {
+                    return JSON.parse(stored);
+                }
+                
+                // Default providers configuration
+                return {
+                    openai: {
+                        name: 'OpenAI',
+                        type: 'cloud',
+                        models: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+                        configured: false,
+                        apiKey: '',
+                        status: 'disconnected'
+                    },
+                    anthropic: {
+                        name: 'Anthropic',
+                        type: 'cloud',
+                        models: ['claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku'],
+                        configured: false,
+                        apiKey: '',
+                        status: 'disconnected'
+                    },
+                    google: {
+                        name: 'Google Gemini',
+                        type: 'cloud',
+                        models: ['gemini-pro', 'gemini-pro-vision'],
+                        configured: false,
+                        apiKey: '',
+                        status: 'disconnected'
+                    },
+                    ollama: {
+                        name: 'Ollama',
+                        type: 'local',
+                        models: [],
+                        configured: false,
+                        endpoint: 'http://localhost:11434',
+                        status: 'disconnected'
+                    },
+                    lmstudio: {
+                        name: 'LM Studio',
+                        type: 'local',
+                        models: [],
+                        configured: false,
+                        endpoint: 'http://localhost:1234',
+                        status: 'disconnected'
+                    }
+                };
+            }
+
+            saveProviders() {
+                localStorage.setItem('aiProviders', JSON.stringify(this.providers));
+            }
+
+            setupContextMenu() {
+                // Add right-click handler to model selector
+                if (this.modelSelector) {
+                    this.modelSelector.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        this.showContextMenu(e.clientX, e.clientY);
+                    });
+
+                    // Also handle regular click to show basic model dropdown
+                    this.modelSelector.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.showContextMenu(e.target.getBoundingClientRect().left, e.target.getBoundingClientRect().bottom + 5);
+                    });
+                }
+
+                // Hide context menu on click outside
+                document.addEventListener('click', () => {
+                    this.hideContextMenu();
+                });
+
+                // Hide on escape key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        this.hideContextMenu();
+                    }
+                });
+            }
+
+            showContextMenu(x, y) {
+                const menu = this.contextMenu;
+                menu.innerHTML = this.buildContextMenuHTML();
+                
+                // Position menu
+                menu.style.left = x + 'px';
+                menu.style.top = y + 'px';
+                menu.style.display = 'block';
+
+                // Adjust position if menu goes off screen
+                const rect = menu.getBoundingClientRect();
+                if (rect.right > window.innerWidth) {
+                    menu.style.left = (window.innerWidth - rect.width - 10) + 'px';
+                }
+                if (rect.bottom > window.innerHeight) {
+                    menu.style.top = (window.innerHeight - rect.height - 10) + 'px';
+                }
+
+                // Add event handlers to menu items
+                this.attachMenuHandlers();
+            }
+
+            hideContextMenu() {
+                this.contextMenu.style.display = 'none';
+            }
+
+            buildContextMenuHTML() {
+                let html = '';
+                
+                // Get configured providers
+                const configuredProviders = Object.entries(this.providers).filter(([key, provider]) => {
+                    if (provider.type === 'cloud') {
+                        return provider.configured && provider.apiKey;
+                    } else {
+                        return provider.models && provider.models.length > 0;
+                    }
+                });
+                
+                if (configuredProviders.length === 0) {
+                    // No configured providers - show add model option
+                    html += '<div class="context-menu-item" data-action="manage">';
+                    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">';
+                    html += '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>';
+                    html += '</svg>';
+                    html += 'Add Model';
+                    html += '</div>';
+                } else {
+                    // Show configured providers and their models
+                    for (const [key, provider] of configuredProviders) {
+                        // Provider header with type badge
+                        html += `<div class="context-menu-item" style="font-weight: 600; font-size: 12px; opacity: 0.7; pointer-events: none;">`;
+                        html += `<span>${provider.name}</span>`;
+                        if (provider.type === 'local') {
+                            html += '<span class="context-menu-badge local" style="margin-left: auto;">Local</span>';
+                        } else {
+                            html += '<span class="context-menu-badge" style="margin-left: auto;">Cloud</span>';
+                        }
+                        html += '</div>';
+                        
+                        // Models for this provider
+                        if (provider.models && provider.models.length > 0) {
+                            provider.models.forEach(model => {
+                                const isActive = key === this.currentProvider && model === this.currentModel;
+                                html += `<div class="context-menu-item ${isActive ? 'active' : ''}" data-provider="${key}" data-model="${model}" style="padding-left: 24px;">`;
+                                html += `<span>${model}</span>`;
+                                if (isActive) {
+                                    html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-left: auto; color: #3B82F6;">';
+                                    html += '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>';
+                                    html += '</svg>';
+                                }
+                                html += '</div>';
+                            });
+                        }
+                        
+                        // Add separator between providers
+                        if (configuredProviders.indexOf([key, provider]) < configuredProviders.length - 1) {
+                            html += '<div class="context-menu-separator"></div>';
+                        }
+                    }
+                    
+                    html += '<div class="context-menu-separator"></div>';
+                    
+                    // Manage providers option with expand icon
+                    html += '<div class="context-menu-item" data-action="manage">';
+                    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">';
+                    html += '<path d="M3 3h18v18H3V3z"/><path d="M15 9l-6 6M15 15V9h-6"/>';
+                    html += '</svg>';
+                    html += 'Manage Providers';
+                    html += '</div>';
+                }
+                
+                return html;
+            }
+
+            attachMenuHandlers() {
+                const items = this.contextMenu.querySelectorAll('.context-menu-item[data-model]');
+                items.forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const provider = item.dataset.provider;
+                        const model = item.dataset.model;
+                        this.switchModel(provider, model);
+                        this.hideContextMenu();
+                    });
+                });
+
+                const actionItems = this.contextMenu.querySelectorAll('.context-menu-item[data-action]');
+                actionItems.forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const action = item.dataset.action;
+                        this.handleMenuAction(action);
+                        this.hideContextMenu();
+                    });
+                });
+            }
+
+            switchModel(provider, model) {
+                this.currentProvider = provider;
+                this.currentModel = model;
+                localStorage.setItem('currentProvider', provider);
+                localStorage.setItem('currentModel', model);
+                this.updateModelSelectorDisplay();
+                
+                // Notify the app of the change
+                if (window.electronAPI) {
+                    window.electronAPI.updateSettings({
+                        provider: provider,
+                        model: model
+                    });
+                }
+                
+                console.log(`Switched to ${provider} - ${model}`);
+            }
+
+            updateModelSelectorDisplay() {
+                if (this.modelSelector) {
+                    const label = this.modelSelector.querySelector('.model-label');
+                    if (label) {
+                        const provider = this.providers[this.currentProvider];
+                        const displayName = provider ? 
+                            `${this.currentModel}${provider.type === 'local' ? ' (Local)' : ''}` : 
+                            this.currentModel;
+                        label.textContent = displayName;
+                    }
+                }
+            }
+
+            handleMenuAction(action) {
+                switch (action) {
+                    case 'manage':
+                        this.openModal();
+                        break;
+                }
+            }
+
+            setupModal() {
+                const modal = this.modal;
+                const closeBtn = document.getElementById('providerModalClose');
+                const refreshBtn = document.getElementById('providerModalRefresh');
+                const cancelBtn = document.getElementById('providerCancelBtn');
+                const saveBtn = document.getElementById('providerSaveBtn');
+
+                // Close modal handlers
+                closeBtn?.addEventListener('click', () => this.closeModal());
+                cancelBtn?.addEventListener('click', () => this.closeModal());
+                
+                // Refresh button handler
+                refreshBtn?.addEventListener('click', async () => {
+                    refreshBtn.style.animation = 'spin 1s linear';
+                    await this.refreshAllProviders();
+                    setTimeout(() => {
+                        refreshBtn.style.animation = '';
+                    }, 1000);
+                });
+                
+                // Save handler
+                saveBtn?.addEventListener('click', () => this.saveModalSettings());
+
+                // Tab switching
+                const tabs = modal.querySelectorAll('.provider-tab');
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        tabs.forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        this.switchTab(tab.dataset.tab);
+                    });
+                });
+
+                // Provider selection handlers
+                const cloudProviderSelect = document.getElementById('cloudProviderSelect');
+                cloudProviderSelect?.addEventListener('change', () => {
+                    this.updateCloudModels(cloudProviderSelect.value);
+                });
+
+                // Local provider cards
+                const providerCards = modal.querySelectorAll('.provider-card');
+                providerCards.forEach(card => {
+                    card.addEventListener('click', () => {
+                        providerCards.forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        this.selectLocalProvider(card.dataset.provider);
+                    });
+                });
+
+                // Test connection buttons
+                document.getElementById('cloudTestBtn')?.addEventListener('click', () => {
+                    this.testCloudConnection();
+                });
+                document.getElementById('localTestBtn')?.addEventListener('click', () => {
+                    this.testLocalConnection();
+                });
+                document.getElementById('localRefreshBtn')?.addEventListener('click', () => {
+                    this.refreshLocalModels();
+                });
+            }
+
+            openModal() {
+                this.modal.style.display = 'flex';
+                this.loadModalData();
+            }
+
+            closeModal() {
+                this.modal.style.display = 'none';
+            }
+
+            switchTab(tab) {
+                const contents = this.modal.querySelectorAll('.provider-tab-content');
+                contents.forEach(content => content.style.display = 'none');
+                document.getElementById(`${tab}Tab`).style.display = 'block';
+            }
+
+            loadModalData() {
+                // Load current settings into modal
+                const provider = this.providers[this.currentProvider];
+                if (provider) {
+                    if (provider.type === 'cloud') {
+                        document.getElementById('cloudProviderSelect').value = this.currentProvider;
+                        document.getElementById('cloudApiKey').value = provider.apiKey || '';
+                        this.updateCloudModels(this.currentProvider);
+                    }
+                }
+            }
+
+            updateCloudModels(provider) {
+                const modelSelect = document.getElementById('cloudModelSelect');
+                const providerData = this.providers[provider];
+                
+                if (providerData && modelSelect) {
+                    modelSelect.innerHTML = '';
+                    providerData.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model;
+                        option.textContent = model;
+                        modelSelect.appendChild(option);
+                    });
+                }
+            }
+
+            async testCloudConnection() {
+                const provider = document.getElementById('cloudProviderSelect').value;
+                const apiKey = document.getElementById('cloudApiKey').value;
+                const statusEl = document.getElementById('cloudStatus');
+                
+                statusEl.className = 'provider-status testing';
+                statusEl.innerHTML = '<span class="status-dot"></span> Testing...';
+                
+                try {
+                    // Simulate API test (replace with actual API call)
+                    const response = await this.testProviderAPI(provider, apiKey);
+                    
+                    if (response.success) {
+                        statusEl.className = 'provider-status connected';
+                        statusEl.innerHTML = '<span class="status-dot"></span> Connected';
+                        this.providers[provider].status = 'connected';
+                        this.providers[provider].configured = true;
+                    } else {
+                        throw new Error(response.error);
+                    }
+                } catch (error) {
+                    statusEl.className = 'provider-status disconnected';
+                    statusEl.innerHTML = '<span class="status-dot"></span> Connection Failed';
+                    console.error('Connection test failed:', error);
+                }
+            }
+
+            async testProviderAPI(provider, apiKey) {
+                // This would make actual API calls to test the connection
+                // For now, simulate with a timeout
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        if (apiKey && apiKey.length > 10) {
+                            resolve({ success: true });
+                        } else {
+                            resolve({ success: false, error: 'Invalid API key' });
+                        }
+                    }, 1000);
+                });
+            }
+
+            async refreshLocalModels() {
+                const endpoint = document.getElementById('localEndpoint').value;
+                const modelSelect = document.getElementById('localModelSelect');
+                
+                try {
+                    // For Ollama, this would call /api/tags
+                    const response = await fetch(`${endpoint}/api/tags`);
+                    const data = await response.json();
+                    
+                    modelSelect.innerHTML = '';
+                    data.models?.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.name;
+                        option.textContent = `${model.name} (${this.formatSize(model.size)})`;
+                        modelSelect.appendChild(option);
+                    });
+                } catch (error) {
+                    modelSelect.innerHTML = '<option value="">Failed to load models</option>';
+                    console.error('Failed to refresh models:', error);
+                }
+            }
+
+            formatSize(bytes) {
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                if (bytes === 0) return '0 B';
+                const i = Math.floor(Math.log(bytes) / Math.log(1024));
+                return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+            }
+
+            saveModalSettings() {
+                const activeTab = this.modal.querySelector('.provider-tab.active').dataset.tab;
+                
+                if (activeTab === 'cloud') {
+                    const provider = document.getElementById('cloudProviderSelect').value;
+                    const apiKey = document.getElementById('cloudApiKey').value;
+                    const model = document.getElementById('cloudModelSelect').value;
+                    
+                    this.providers[provider].apiKey = apiKey;
+                    this.providers[provider].configured = true;
+                    this.currentProvider = provider;
+                    this.currentModel = model;
+                } else if (activeTab === 'local') {
+                    // Save local provider settings
+                    const selected = this.modal.querySelector('.provider-card.selected');
+                    if (selected) {
+                        const provider = selected.dataset.provider;
+                        const endpoint = document.getElementById('localEndpoint').value;
+                        const model = document.getElementById('localModelSelect').value;
+                        
+                        this.providers[provider].endpoint = endpoint;
+                        this.providers[provider].configured = true;
+                        this.currentProvider = provider;
+                        this.currentModel = model;
+                    }
+                }
+                
+                this.saveProviders();
+                this.updateModelSelectorDisplay();
+                this.closeModal();
+            }
+
+            async refreshModels() {
+                const provider = this.providers[this.currentProvider];
+                if (provider.type === 'local') {
+                    await this.refreshLocalModels();
+                } else {
+                    // For cloud providers, could refresh available models via API
+                    console.log('Refreshing cloud models...');
+                }
+            }
+
+            async refreshAllProviders() {
+                console.log('Refreshing all providers...');
+                
+                // Refresh each configured provider
+                for (const [key, provider] of Object.entries(this.providers)) {
+                    if (provider.type === 'local' && provider.configured) {
+                        try {
+                            const endpoint = provider.endpoint;
+                            const response = await fetch(`${endpoint}/api/tags`);
+                            if (response.ok) {
+                                const data = await response.json();
+                                provider.models = data.models?.map(m => m.name) || [];
+                                provider.status = 'connected';
+                            } else {
+                                provider.status = 'disconnected';
+                            }
+                        } catch (error) {
+                            provider.status = 'disconnected';
+                            console.error(`Failed to refresh ${provider.name}:`, error);
+                        }
+                    } else if (provider.type === 'cloud' && provider.configured && provider.apiKey) {
+                        // Could refresh cloud provider models here
+                        console.log(`Would refresh ${provider.name} models via API`);
+                    }
+                }
+                
+                this.saveProviders();
+                
+                // Update the modal if it's open
+                const activeTab = this.modal.querySelector('.provider-tab.active')?.dataset.tab;
+                if (activeTab === 'local') {
+                    this.refreshLocalModels();
+                }
+            }
+
+            async testCurrentConnection() {
+                const provider = this.providers[this.currentProvider];
+                console.log(`Testing connection for ${provider.name}...`);
+                // Implement connection test
+            }
+
+            selectLocalProvider(providerKey) {
+                const endpoint = this.providers[providerKey].endpoint;
+                document.getElementById('localEndpoint').value = endpoint;
+                // Optionally refresh models for this provider
+            }
+
+            async testLocalConnection() {
+                const endpoint = document.getElementById('localEndpoint').value;
+                const statusEl = document.getElementById('localStatus');
+                
+                statusEl.className = 'provider-status testing';
+                statusEl.innerHTML = '<span class="status-dot"></span> Testing...';
+                
+                try {
+                    const response = await fetch(`${endpoint}/api/version`);
+                    if (response.ok) {
+                        statusEl.className = 'provider-status connected';
+                        statusEl.innerHTML = '<span class="status-dot"></span> Connected';
+                    } else {
+                        throw new Error('Connection failed');
+                    }
+                } catch (error) {
+                    statusEl.className = 'provider-status disconnected';
+                    statusEl.innerHTML = '<span class="status-dot"></span> Not Running';
+                    console.error('Local connection test failed:', error);
+                }
+            }
+        }
+
+        // Welcome Screen Management
+        class WelcomeScreen {
+            constructor() {
+                this.welcomeScreen = document.getElementById('newChatWelcome');
+                this.chatMessages = document.getElementById('chatMessages');
+                this.mainChatInput = document.getElementById('chatInput');
+                this.newChatBtn = document.getElementById('newChatBtn');
+                this.sendBtn = document.getElementById('sendBtn');
+                
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.checkChatStatus(); // Check initial state
+            }
+
+            setupEventListeners() {
+                // Handle New Chat button
+                if (this.newChatBtn) {
+                    this.newChatBtn.addEventListener('click', () => {
+                        this.showWelcome();
+                        this.clearChat();
+                    });
+                }
+
+                // Don't hide welcome on focus - only hide when message is sent
+                // Keep the input listener for when typing starts but welcome should stay visible
+                if (this.mainChatInput) {
+                    // Removed auto-hide on focus to keep welcome screen visible
+                    // this.mainChatInput.addEventListener('focus', () => {
+                    //     this.hideWelcome();
+                    // });
+
+                    // Also don't hide on input - let sendMessage handle it
+                    // this.mainChatInput.addEventListener('input', () => {
+                    //     if (this.mainChatInput.value.trim()) {
+                    //         this.hideWelcome();
+                    //     }
+                    // });
+                }
+
+                // Don't hide here - let sendMessage handle it
+                // if (this.sendBtn) {
+                //     this.sendBtn.addEventListener('click', () => {
+                //         this.hideWelcome();
+                //     });
+                // }
+
+                // Listen for new messages being added to chat
+                if (this.chatMessages) {
+                    const observer = new MutationObserver(() => {
+                        this.checkChatStatus();
+                    });
+                    observer.observe(this.chatMessages, { childList: true });
+                }
+            }
+
+            showWelcome() {
+                if (this.welcomeScreen) {
+                    this.welcomeScreen.classList.remove('hidden');
+                    // Focus the main input instead
+                    setTimeout(() => {
+                        this.mainChatInput?.focus();
+                    }, 300);
+                }
+            }
+
+            hideWelcome() {
+                if (this.welcomeScreen) {
+                    this.welcomeScreen.classList.add('hidden');
+                }
+            }
+
+            clearChat() {
+                if (this.chatMessages) {
+                    this.chatMessages.innerHTML = '';
+                }
+                if (this.mainChatInput) {
+                    this.mainChatInput.value = '';
+                }
+            }
+
+            // Check if chat is empty to show/hide welcome
+            checkChatStatus() {
+                const hasMessages = this.chatMessages?.children.length > 0;
+                const hasInputContent = this.mainChatInput?.value.trim();
+                
+                if (hasMessages || hasInputContent) {
+                    this.hideWelcome();
+                } else {
+                    this.showWelcome();
+                }
+            }
+        }
+
+        // Initialize MCP integration when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Welcome Screen
+            window.welcomeScreen = new WelcomeScreen();
+            
+            // Initialize Provider Manager
+            window.providerManager = new ProviderManager();
+            
+            if (window.mcpIntegration) {
+                mcpIntegration.init();
+            }
+
+            // Auto-resize textarea functionality
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput) {
+                function autoResizeTextarea() {
+                    chatInput.style.height = 'auto';
+                    chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+                }
+
+                chatInput.addEventListener('input', autoResizeTextarea);
+                chatInput.addEventListener('focus', autoResizeTextarea);
+                
+                // Initial resize
+                autoResizeTextarea();
+            }
+
+            // History collapse/expand functionality
+            const historyToggleBtn = document.getElementById('historyToggleBtn');
+            const conversationItems = document.getElementById('conversationItems');
+            
+            if (historyToggleBtn && conversationItems) {
+                historyToggleBtn.addEventListener('click', () => {
+                    historyToggleBtn.classList.toggle('collapsed');
+                    conversationItems.classList.toggle('collapsed');
+                });
+            }
+
+
+            // Welcome screen removed
+            
+            // Add MCP button and context menu functionality
+            const mcpBtn = document.getElementById('mcpBtn');
+            const mcpContextMenu = document.getElementById('mcpContextMenu');
+            const mcpModal = document.getElementById('mcpModal');
+            const mcpCloseBtn = document.getElementById('mcpCloseBtn');
+            const manageServersBtn = document.getElementById('manageServersBtn');
+            const addConnectorBtn = document.getElementById('addConnectorBtn');
+            const viewToolsBtn = document.getElementById('viewToolsBtn');
+            
+            // Toggle context menu on MCP button click
+            if (mcpBtn) {
+                mcpBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Toggle context menu
+                    if (mcpContextMenu.style.display === 'none' || !mcpContextMenu.style.display) {
+                        mcpContextMenu.style.display = 'block';
+                    } else {
+                        mcpContextMenu.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Context menu item handlers
+            if (manageServersBtn) {
+                manageServersBtn.addEventListener('click', () => {
+                    mcpContextMenu.style.display = 'none';
+                    if (mcpModal) {
+                        mcpModal.style.display = 'block';
+                        // Load servers if mcpIntegration is available
+                        if (window.mcpIntegration && window.mcpIntegration.loadServers) {
+                            mcpIntegration.loadServers();
+                        }
+                    }
+                });
+            }
+            
+            if (addConnectorBtn) {
+                addConnectorBtn.addEventListener('click', () => {
+                    mcpContextMenu.style.display = 'none';
+                    // TODO: Open add connector modal
+                    alert('Add Connector feature coming soon!');
+                });
+            }
+            
+            if (viewToolsBtn) {
+                viewToolsBtn.addEventListener('click', () => {
+                    mcpContextMenu.style.display = 'none';
+                    if (mcpModal) {
+                        mcpModal.style.display = 'block';
+                        // Load servers and switch to tools view
+                        if (window.mcpIntegration && window.mcpIntegration.loadServers) {
+                            mcpIntegration.loadServers();
+                        }
+                    }
+                });
+            }
+            
+            // Close context menu when clicking elsewhere
+            document.addEventListener('click', (e) => {
+                if (!mcpBtn.contains(e.target) && !mcpContextMenu.contains(e.target)) {
+                    mcpContextMenu.style.display = 'none';
+                }
+            });
+            
+            // Modal close button
+            if (mcpCloseBtn) {
+                mcpCloseBtn.addEventListener('click', () => {
+                    if (mcpModal) {
+                        mcpModal.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Close modal when clicking outside
+            if (mcpModal) {
+                mcpModal.addEventListener('click', (event) => {
+                    if (event.target === mcpModal) {
+                        mcpModal.style.display = 'none';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

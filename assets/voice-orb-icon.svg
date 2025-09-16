@@ -1,0 +1,38 @@
+
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="orbGradient" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" style="stop-color:#e8f0ff;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#C5D1E0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a0b8d0;stop-opacity:1" />
+    </radialGradient>
+    
+    <linearGradient id="eyeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00CEC8;stop-opacity:1" />
+    </linearGradient>
+    
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="220" fill="url(#orbGradient)" />
+  
+  <!-- Outer glow -->
+  <circle cx="256" cy="256" r="230" fill="none" stroke="rgba(59, 130, 246, 0.3)" stroke-width="8" filter="url(#glow)" />
+  
+  <!-- Left eye -->
+  <rect x="216" y="216" width="24" height="80" rx="12" ry="12" fill="url(#eyeGradient)" />
+  
+  <!-- Right eye -->
+  <rect x="272" y="216" width="24" height="80" rx="12" ry="12" fill="url(#eyeGradient)" />
+  
+  <!-- Inner highlight -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="rgba(255, 255, 255, 0.2)" stroke-width="4" />
+</svg>
