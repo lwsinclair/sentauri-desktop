@@ -178,6 +178,55 @@ npm run dist          # Create distributable packages
 - Verify your AI provider's service status
 - Try a different AI provider to isolate the issue
 
+## Architecture & Development Notes
+
+### Project Evolution
+This project has evolved from a proof-of-concept to a fully functional desktop application used daily. It represents pragmatic engineering decisions focused on shipping working software while identifying areas for future improvement.
+
+### Current Architecture
+- **Main Process** (`src/main.js`): Handles Electron lifecycle, window management, and system integration
+- **Renderer Process** (`src/app.js`): Manages UI state and AI provider interactions
+- **MCP Integration** (`src/mcp-*.js`): Implements Model Context Protocol for extensible tool use
+- **Provider Abstraction**: Unified interface for OpenAI, Anthropic, Google, and local LLMs
+
+### Technical Achievements
+✅ **Multi-provider AI orchestration** - Seamless switching between AI providers
+✅ **MCP Protocol Implementation** - Early adopter of Model Context Protocol
+✅ **Local LLM Integration** - Privacy-first approach with Ollama/LM Studio support
+✅ **Cross-platform compatibility** - Single codebase for Mac, Windows, Linux
+✅ **Real-time streaming** - Responsive UI with streaming AI responses
+
+### Known Areas for Improvement
+As this is a living project, I've identified several areas for enhancement:
+
+1. **Code Organization**: The main app.js has grown to 2000+ lines and would benefit from modularization
+2. **State Management**: Currently using direct DOM manipulation; considering Redux or Zustand
+3. **Type Safety**: Planning TypeScript migration for better development experience
+4. **Test Coverage**: Basic tests exist; comprehensive testing suite in development
+
+### Why This Matters
+I believe in shipping functional software and iterating based on real usage. This project has:
+- **Active users** providing feedback
+- **Regular updates** based on user needs
+- **Clear roadmap** for architectural improvements
+
+The code you see here works in production. It's not perfect, but it solves real problems for real users every day.
+
+### Upcoming Improvements (Q1 2026)
+- [ ] Extract provider integrations into plugin architecture
+- [ ] Implement proper state management
+- [ ] Add comprehensive error boundaries
+- [ ] Migrate critical paths to TypeScript
+- [ ] Expand test coverage to 80%+
+
+### Learning Highlights
+Building this project taught me:
+- The importance of shipping MVPs and iterating based on feedback
+- How to balance code quality with delivery speed
+- Desktop app distribution challenges across different OS platforms
+- The complexity of managing multiple AI provider APIs efficiently
+- Early adoption benefits and challenges of new protocols (MCP)
+
 ## License
 
 MIT License - feel free to modify and distribute!
