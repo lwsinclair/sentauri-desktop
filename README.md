@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/habibidipopadi-sentauri-desktop-badge.png)](https://mseep.ai/app/habibidipopadi-sentauri-desktop)
+
 # Atomic Copilot Desktop
 
 🖥️ **AI-powered design system assistant with local LLM support**
